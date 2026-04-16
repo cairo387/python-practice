@@ -1,5 +1,12 @@
 import sys
+import os
 import pandas as pd
+
+# 文字色
+RED = "\033[31m"
+GREEN = "\033[32m"
+RESET = "\033[0m"
+
 
 # csv読み込み用関数
 def load_csv(file_path):
@@ -15,14 +22,15 @@ def calculate_status_summary(df):
     fail_count = len(df[df["Status"] == "Fail"])
     # Pass率計算
     pass_rate = pass_count / total * 100 if total != 0 else 0
-    return total,pass_count,fail_count,pass_rate
+    return total, pass_count, fail_count, pass_rate
 
 # 日付集計用関数
 def calculate_daily_counts(df):
     return df["ExecutedDate"].value_counts().sort_index()
 
 # 表示処理用関数
-def print_status_summary(total,pass_count,fail_count,pass_rate):
+def print_status_summary(total, pass_count, fail_count, pass_rate):
+    print(f"------テスト状況を一覧にします------")
     print(f"全体のテスト数: {total}")
     print(f"Pass: {pass_count}")
     print(f"Fail: {fail_count}")
@@ -30,17 +38,49 @@ def print_status_summary(total,pass_count,fail_count,pass_rate):
 
 # main関数
 def main():
+    #例外処理を追加
+    #引数チェック：コマンドラインに「python 【pythonファイル名】 【csvファイルパス】」の形式で入力されていない場合の例外処理
+    if len(sys.argv) < 2:
+        print(f"{RED}コマンドエラー：「python 【pythonファイル名】 【csvファイルパス】」をターミナルに入力して実行してください。{RESET}")
+        sys.exit(1)
+    
     # コマンドで渡されたファイル名を受け取る
     file_path = sys.argv[1]
-    # CSV読み込み
-    df = load_csv(file_path)
+    
+    #ファイル存在チェック：指定したCSVファイルパスが存在しない場合の例外処理
+    if not os.path.exists(file_path):
+        print(f"{RED}存在エラー：指定されたファイルが存在しません。{RESET}")
+        sys.exit(1)
+    
+    # 読み込み保護：CSVファイルを読み込む、例外が発生したらエラーメッセージを表示
+    # Exceptionの例：文字コードエラー、ファイル破損、フォーマット不正など
+    try:
+        # CSV読み込み
+        df = load_csv(file_path)
+    except Exception as e:
+        print(f"{RED}読み込みエラー：CSVの読み込みに失敗しました。エラー内容:{e}{RESET}")
+        sys.exit(1)
+    
+    # 列存在チェック：CSVの列にStatusとExecuteDateが存在しているかチェック、例外の場合はエラーメッセージを表示
+    required_columns = ["Status" , "ExecutedDate"]
+    #空のリスト(missing_columns)を作成
+    missing_columns = []
+    #列を1つずつ確認
+    for col in required_columns:
+        #存在チェック
+        if col not in df.columns:
+            missing_columns.append(col)
+    if missing_columns:
+            print(f"{RED}存在エラー：必要な列[{', '.join(missing_columns)}]が存在しません。{RESET}")
+            sys.exit(1)
 
     total, pass_count, fail_count, pass_rate = calculate_status_summary(df)
     daily_counts = calculate_daily_counts(df)
     # 集計表示用関数呼び出し
     print_status_summary(total,pass_count,fail_count,pass_rate)
-    print("\n日付ごとの実行件数")
+    print("\n------日付ごとの実行件数を表示します------")
     print(daily_counts)
+    print(f"{GREEN}正常終了しました。{RESET}")
 
 # エントリーポイント
 if __name__ == "__main__":
