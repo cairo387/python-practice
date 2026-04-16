@@ -1,0 +1,6 @@
+TestID,TestName,Status,ExecutedBy,ExecutedDate
+1,Login正常系,Pass,Alice,2024-06-01
+2,Login異常系,Fail,Bob,2024-06-01
+3,検索正常系,Pass,Alice,2024-06-02
+4,検索異常系,Fail,Charlie,2024-06-02
+5,決済正常系,Pass,Bob,2024-06-03
