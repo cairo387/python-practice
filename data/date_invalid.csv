@@ -1,0 +1,6 @@
+ID,Title,Status,Priority,Assignee,CreatedDate
+1,Login error,未対応,High,Alice,20240601
+2,Search broken,対応済み,Medium,Bob,2024-06-01
+3,Crash,未対応,High,Alice,2024-06-02
+4,UI misaligned,保留,Low,Charlie,2024-06-03
+5,Payment failure,未対応,Critical,Bob,2024-06-03

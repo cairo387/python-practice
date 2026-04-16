@@ -1,0 +1,6 @@
+ID,Title,Status,Priority
+1,Login error,未対応,High
+2,Search broken,対応済み,Medium
+3,Crash,未対応,High
+4,UI misaligned,保留,Low
+5,Payment failure,未対応,Critical
