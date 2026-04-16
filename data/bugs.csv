@@ -1,0 +1,6 @@
+ID,Title,Status,Assignee
+1,Login error,未対応,Alice
+2,Search broken,対応済み,Bob
+3,Crash on submit,未対応,Alice
+4,UI misaligned,対応済み,Charlie
+5,Payment failure,未対応,Bob
