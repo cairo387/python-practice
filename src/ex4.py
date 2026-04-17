@@ -50,8 +50,12 @@ def extract_unresolved(df):
 def summariza_status_priority(df):
     return pd.crosstab(df["Status"], df["Priority"])
 
+#　日別のステータスの集計関数
+def summariza_daily_trend(df):
+    return pd.crosstab(df["CreatedDate"], df["Status"])
+
 # Excelへレポートを出力する
-def export_to_excel(output_path, df, status_summary, priority_summary, assignee_summary, unresolved_df, status_priority):
+def export_to_excel(output_path, df, status_summary, priority_summary, assignee_summary, unresolved_df, status_priority, daily_trend):
     with pd.ExcelWriter(output_path) as writer:
         df.to_excel(writer, sheet_name="RawData", index=False)
         status_summary.to_excel(writer, sheet_name="StatusSummary")
@@ -59,6 +63,7 @@ def export_to_excel(output_path, df, status_summary, priority_summary, assignee_
         assignee_summary.to_excel(writer, sheet_name="AssigneeSummary")
         unresolved_df.to_excel(writer, sheet_name="Unresolved", index=False)
         status_priority.to_excel(writer, sheet_name="ステータス×優先度のクロス集計")
+        daily_trend.to_excel(writer, sheet_name="日別のステータス推移")
 
 # 引数パーサー作成
 def parse_args():
@@ -115,8 +120,9 @@ def main():
     assignee_summary = summarize_by_assignee(df)
     unresolved_df = extract_unresolved(df)
     status_priority_df = summariza_status_priority(df)
+    daily_trend_df = summariza_daily_trend(df)
 
-    export_to_excel(output_path, df, status_summary, priority_summary, assignee_summary, unresolved_df, status_priority_df)
+    export_to_excel(output_path, df, status_summary, priority_summary, assignee_summary, unresolved_df, status_priority_df, daily_trend_df)
 
     print(f"{GREEN}レポートが正常に出力されました。出力先：{args.output}{RESET}")
 
