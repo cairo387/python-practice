@@ -82,7 +82,7 @@ def create_dashboard(df, unresolved_df, sla_df):
 # Excelへレポートを出力する
 def export_to_excel(output_path, df, status_summary, priority_summary, assignee_summary, unresolved_df, status_priority, daily_trend, unresolved_over_3days, dashboard_df):
     try:
-        with pd.ExcelWriter(output_path) as writer:
+        with pd.ExcelWriter(output_path, engine="xlsxwriter") as writer:
             df.to_excel(writer, sheet_name="ローデータ", index=False)
             status_summary.to_excel(writer, sheet_name="ステータス別集計")
             priority_summary.to_excel(writer, sheet_name="優先度別集計")
@@ -97,7 +97,7 @@ def export_to_excel(output_path, df, status_summary, priority_summary, assignee_
         print(f"{RED}出力エラー：出力先のExcelファイルが開かれています。閉じてから再実行してください。{RESET}")
         sys.exit(1)
     except Exception as e:
-        print(f"{RED}出力エラー：Excelファイルのへの出力に失敗しました。{RESET}")
+        print(f"{RED}出力エラー：Excelファイルのへの出力に失敗しました。エラー内容：{e}{RESET}")
         sys.exit(1)
 
 
