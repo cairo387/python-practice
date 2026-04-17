@@ -27,43 +27,51 @@ def load_csv(file_path):
         print(f"{RED}予期しないエラーが発生しました。エラー内容: {e}{RESET}")
         sys.exit(1)
     
-
+# 単純集計
 # ステータス別件数のカウント関数
 def summarize_by_status(df):
     #value_counts()は出現回数をカウントするメソッド
     return df["Status"].value_counts()
-
 # 優先度別件数のカウント関数
 def summarize_by_priority(df):
     return df["Priority"].value_counts()
-
 # 担当者別件数のカウント関数
 def summarize_by_assignee(df):
     return df["Assignee"].value_counts()
 
+# データ絞り込み
 # Statusが「未対応」のデータのみを抽出する関数
 def extract_unresolved(df):
     return df[df["Status"] == "未対応"]
 
 # クロス集計対応
 # Status × Priority集計関数
-def summariza_status_priority(df):
+def summarize_status_priority(df):
     return pd.crosstab(df["Status"], df["Priority"])
-
 #　日別のステータスの集計関数
-def summariza_daily_trend(df):
-    return pd.crosstab(df["CreatedDate"], df["Status"])
+def summarize_daily_trend(df):
+    return pd.crosstab(df["CreatedDate"], df["Status"]).sort_index()
+
+# SLA（サービスレベルアグリーメント）違反検知
+# CreatedDateから3日以上未対応のデータを抽出し、警告する関数
+def detect_sla_violation(df):
+    today = pd.Timestamp.today()
+    unresolved = df[df["Status"] == "未対応"]
+    overdue = unresolved[today - unresolved["CreatedDate"] > pd.Timedelta(days=3)]
+    return overdue
 
 # Excelへレポートを出力する
-def export_to_excel(output_path, df, status_summary, priority_summary, assignee_summary, unresolved_df, status_priority, daily_trend):
+def export_to_excel(output_path, df, status_summary, priority_summary, assignee_summary, unresolved_df, status_priority, daily_trend, unresolved_over_3days):
     with pd.ExcelWriter(output_path) as writer:
-        df.to_excel(writer, sheet_name="RawData", index=False)
-        status_summary.to_excel(writer, sheet_name="StatusSummary")
-        priority_summary.to_excel(writer, sheet_name="PrioritySummary")
-        assignee_summary.to_excel(writer, sheet_name="AssigneeSummary")
-        unresolved_df.to_excel(writer, sheet_name="Unresolved", index=False)
+        df.to_excel(writer, sheet_name="サマリー", index=False)
+        status_summary.to_excel(writer, sheet_name="ステータス別集計")
+        priority_summary.to_excel(writer, sheet_name="優先度別集計")
+        assignee_summary.to_excel(writer, sheet_name="担当者別集計")
+        unresolved_df.to_excel(writer, sheet_name="未対応データのみ抽出", index=False)
         status_priority.to_excel(writer, sheet_name="ステータス×優先度のクロス集計")
         daily_trend.to_excel(writer, sheet_name="日別のステータス推移")
+        unresolved_over_3days.to_excel(writer, sheet_name="SLA違反_3日以上未対応")
+
 
 # 引数パーサー作成
 def parse_args():
@@ -119,10 +127,11 @@ def main():
     priority_summary = summarize_by_priority(df)
     assignee_summary = summarize_by_assignee(df)
     unresolved_df = extract_unresolved(df)
-    status_priority_df = summariza_status_priority(df)
-    daily_trend_df = summariza_daily_trend(df)
+    status_priority_df = summarize_status_priority(df)
+    daily_trend_df = summarize_daily_trend(df)
+    unresolved_over_3days_df = detect_sla_violation(df)
 
-    export_to_excel(output_path, df, status_summary, priority_summary, assignee_summary, unresolved_df, status_priority_df, daily_trend_df)
+    export_to_excel(output_path, df, status_summary, priority_summary, assignee_summary, unresolved_df, status_priority_df, daily_trend_df, unresolved_over_3days_df)
 
     print(f"{GREEN}レポートが正常に出力されました。出力先：{args.output}{RESET}")
 
