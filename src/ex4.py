@@ -4,10 +4,12 @@ import os
 import argparse
 import pandas as pd
 
-#文字色定義
+# 文字色
 RED = "\033[31m"
 GREEN = "\033[32m"
 RESET = "\033[0m"
+# 必須カラム
+REQUIRED_COLUMNS = ["Status", "Priority", "Assignee", "CreatedDate"]
 
 #csv読み込み関数
 def load_csv(file_path):
@@ -57,20 +59,30 @@ def summarize_daily_trend(df):
 def detect_sla_violation(df):
     today = pd.Timestamp.today()
     unresolved = df[df["Status"] == "未対応"]
-    overdue = unresolved[today - unresolved["CreatedDate"] > pd.Timedelta(days=3)]
+    overdue = unresolved[
+        (today.normalize()  - unresolved["CreatedDate"]).dt.days > 3
+        ]
     return overdue
 
 # Excelへレポートを出力する
 def export_to_excel(output_path, df, status_summary, priority_summary, assignee_summary, unresolved_df, status_priority, daily_trend, unresolved_over_3days):
-    with pd.ExcelWriter(output_path) as writer:
-        df.to_excel(writer, sheet_name="サマリー", index=False)
-        status_summary.to_excel(writer, sheet_name="ステータス別集計")
-        priority_summary.to_excel(writer, sheet_name="優先度別集計")
-        assignee_summary.to_excel(writer, sheet_name="担当者別集計")
-        unresolved_df.to_excel(writer, sheet_name="未対応データのみ抽出", index=False)
-        status_priority.to_excel(writer, sheet_name="ステータス×優先度のクロス集計")
-        daily_trend.to_excel(writer, sheet_name="日別のステータス推移")
-        unresolved_over_3days.to_excel(writer, sheet_name="SLA違反_3日以上未対応")
+    try:
+        with pd.ExcelWriter(output_path) as writer:
+            df.to_excel(writer, sheet_name="サマリー", index=False)
+            status_summary.to_excel(writer, sheet_name="ステータス別集計")
+            priority_summary.to_excel(writer, sheet_name="優先度別集計")
+            assignee_summary.to_excel(writer, sheet_name="担当者別集計")
+            unresolved_df.to_excel(writer, sheet_name="未対応データのみ抽出", index=False)
+            status_priority.to_excel(writer, sheet_name="ステータス×優先度のクロス集計")
+            daily_trend.to_excel(writer, sheet_name="日別のステータス推移")
+            unresolved_over_3days.to_excel(writer, sheet_name="SLA違反_3日以上未対応")
+    # 例外処理
+    except PermissionError:
+        print(f"{RED}出力エラー：出力先のExcelファイルが開かれています。閉じてから再実行してください。{RESET}")
+        sys.exit(1)
+    except Exception as e:
+        print(f"{RED}出力エラー：Excelファイルのへの出力に失敗しました。{RESET}")
+        sys.exit(1)
 
 
 # 引数パーサー作成
@@ -86,11 +98,11 @@ def parse_args():
 
 # CSVのカラム構成が条件を満たすかを検証する関数（満たさない場合はエラーメッセージを表示）
 def validate_columns(df):
-    required_columns = ["Status", "Priority", "Assignee", "CreatedDate"]
-    missing = [col for col in required_columns if col not in df.columns]
+    missing = [col for col in REQUIRED_COLUMNS if col not in df.columns]
 
     if missing:
-        print(f"{RED}存在エラー：必要な列[ {', '.join(missing)}]が存在しません。\n{df}{RESET}")
+        print(f"{RED}存在エラー：必要な列[ {', '.join(missing)}]が存在しません。{RESET}")
+        print(f"{RED}現在の列: {list(df.columns)}{RESET}")
         sys.exit(1)
 
 # main関数
@@ -112,7 +124,7 @@ def main():
         df["CreatedDate"] = pd.to_datetime(df["CreatedDate"])
     # 例外処理
     except Exception:
-        print(f"{RED}形式エラー：CreatedDate列の日付形式が不正です。\n{df['CreatedDate']}{RESET}")
+        print(f"{RED}形式エラー：CreatedDate列の日付形式が不正です。{RESET}")
         sys.exit(1)
 
     if args.start:
